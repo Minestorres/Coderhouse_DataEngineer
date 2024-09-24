@@ -23,7 +23,6 @@ def get_data_api(**kwargs):
     df = pd.DataFrame(data)
     print(df)
     
-#def transformacion(**kwargs):
     # Crear la columna autonumber con cuatro dígitos
     df['autonumber'] = range(1, len(df) + 1)
     df['autonumber'] = df['autonumber'].apply(lambda x: str(x).zfill(4))
@@ -98,7 +97,6 @@ def conexion_db(**kwargs):
         print("No es posible conectar a Redshift")
         print(e)
                 
-def carga_datos_db(**kwargs):
 # Defino el nombre de la tabla
     cotizaciones = 'cotizaciones'
 
@@ -131,4 +129,48 @@ def carga_datos_db(**kwargs):
     finally:
         # Cierro el cursor y la conexión
         cur.close()
-        conn.close()            
+        conn.close()  
+        
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+
+
+def envio_de_email(**context):
+    subject = context["var"]["value"].get("subject_mail")
+    from_address = context["var"]["value"].get("email")
+    password = context["var"]["value"].get("email_password")
+    to_address = context["var"]["value"].get("to_address")
+
+    # Creación del objeto MIMEText
+    msg = MIMEMultipart()
+    msg['From'] = from_address
+    msg['To'] = to_address
+    msg['Subject'] = subject
+
+    # Creación del contenido del cuerpo del mail con HTML
+    html_content = f"""
+    <html>
+    <body>
+        <p>Buenos días</p>
+        <p>El proceso de ETL a redshift se ha realizado con éxito</p>
+    </body>
+    </html>
+    """
+
+    # Adjuntar el contenido HTML
+    msg.attach(MIMEText(html_content, 'html'))
+
+    try:
+        
+        server = smtplib.SMTP('smtp.gmail.com', 587) 
+        server.starttls() 
+
+        server.login(from_address, password)
+
+        text = msg.as_string()
+        server.sendmail(from_address, to_address, text)
+        server.quit()
+        print("Email sent successfully")
+    except Exception as e:
+        print(f"Failed to send email: {str(e)}")  
